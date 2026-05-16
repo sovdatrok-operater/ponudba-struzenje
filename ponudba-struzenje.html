@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Ponudba struženje</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --bg2: #f5f5f4; --bg3: #e8e8e6;
+    --text: #1a1a1a; --text2: #6b6b6b; --text3: #999;
+    --border: rgba(0,0,0,0.12); --border2: rgba(0,0,0,0.22);
+    --blue: #1a56db; --blue-bg: #eff6ff; --blue-text: #1e40af;
+    --radius: 10px; --radius-sm: 7px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1e; --bg2: #2c2c2e; --bg3: #3a3a3c;
+      --text: #f2f2f7; --text2: #aeaeb2; --text3: #6c6c70;
+      --border: rgba(255,255,255,0.12); --border2: rgba(255,255,255,0.22);
+      --blue-bg: #1e3a5f; --blue-text: #93c5fd;
+    }
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg2); color: var(--text); min-height: 100vh; }
+  .topbar { background: var(--bg); border-bottom: 0.5px solid var(--border); padding: 14px 16px 10px; position: sticky; top: 0; z-index: 100; }
+  .topbar h1 { font-size: 17px; font-weight: 600; }
+  .topbar p { font-size: 12px; color: var(--text2); margin-top: 1px; }
+  .tabs { display: flex; background: var(--bg); border-bottom: 0.5px solid var(--border); position: sticky; top: 56px; z-index: 99; }
+  .tab { flex: 1; padding: 10px 4px 8px; font-size: 11px; text-align: center; cursor: pointer; color: var(--text2); border-bottom: 2px solid transparent; font-weight: 500; }
+  .tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+  .tab i { display: block; font-size: 17px; margin-bottom: 2px; }
+  .page { display: none; padding: 12px; max-width: 480px; margin: 0 auto; }
+  .page.active { display: block; }
+  .card { background: var(--bg); border-radius: var(--radius); border: 0.5px solid var(--border); padding: 14px; margin-bottom: 10px; }
+  .card-title { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
+  .field { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { font-size: 13px; color: var(--text2); min-width: 118px; }
+  .field input, .field select { flex: 1; border: 0.5px solid var(--border2); border-radius: var(--radius-sm); padding: 8px 10px; font-size: 14px; background: var(--bg); color: var(--text); font-family: inherit; -webkit-appearance: none; }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--blue); }
+  .field .unit { font-size: 12px; color: var(--text3); min-width: 26px; }
+  .upload-box { border: 1.5px dashed var(--border2); border-radius: var(--radius); padding: 20px 12px; text-align: center; cursor: pointer; background: var(--bg2); margin-bottom: 10px; }
+  .upload-box .icon { font-size: 36px; }
+  .upload-box p { font-size: 13px; color: var(--text2); margin-top: 6px; line-height: 1.4; }
+  .btn-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .btn { flex: 1; padding: 10px 8px; font-size: 13px; font-weight: 500; border-radius: var(--radius-sm); border: 0.5px solid var(--border2); background: var(--bg); color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-family: inherit; }
+  .btn:active { opacity: 0.7; }
+  .btn.primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .btn.success { background: #16a34a; color: #fff; border-color: #16a34a; }
+  .preview { width: 100%; border-radius: var(--radius-sm); max-height: 200px; object-fit: contain; border: 0.5px solid var(--border); display: none; margin-bottom: 8px; }
+  .status-line { font-size: 12px; color: var(--text2); text-align: center; padding: 4px 0; min-height: 20px; }
+  .info-box { background: var(--blue-bg); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 13px; color: var(--blue-text); margin-bottom: 10px; display: none; line-height: 1.5; }
+  .ops-list { display: flex; flex-direction: column; gap: 6px; }
+  .op-row { display: flex; align-items: center; gap: 6px; background: var(--bg2); border-radius: var(--radius-sm); padding: 9px 10px; }
+  .op-icon { font-size: 16px; width: 22px; text-align: center; }
+  .op-name { flex: 1; font-size: 13px; color: var(--text); }
+  .op-row input { width: 54px; border: 0.5px solid var(--border2); border-radius: 6px; padding: 5px 7px; font-size: 13px; text-align: right; background: var(--bg); color: var(--text); font-family: inherit; }
+  .op-unit { font-size: 12px; color: var(--text3); }
+  .ops-total { font-size: 12px; color: var(--text2); text-align: right; margin-top: 8px; padding-top: 8px; border-top: 0.5px solid var(--border); }
+  .mat-hint { font-size: 12px; color: var(--text2); background: var(--bg2); border-radius: var(--radius-sm); padding: 7px 10px; margin-top: 6px; }
+  .result-rows { display: flex; flex-direction: column; }
+  .result-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; border-bottom: 0.5px solid var(--border); }
+  .result-row:last-child { border-bottom: none; }
+  .result-row span:first-child { color: var(--text2); }
+  .result-total { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 0 4px; }
+  .result-total .label { font-size: 14px; font-weight: 600; }
+  .result-total .value { font-size: 24px; font-weight: 700; color: var(--blue); }
+  .result-sub { display: flex; justify-content: space-between; font-size: 13px; color: var(--text2); padding-bottom: 8px; }
+  .thinking { display: none; align-items: center; justify-content: center; gap: 6px; padding: 14px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text2); animation: pulse 1.2s ease-in-out infinite; }
+  .dot:nth-child(2){animation-delay:.2s} .dot:nth-child(3){animation-delay:.4s}
+  @keyframes pulse{0%,80%,100%{opacity:.25}40%{opacity:1}}
+  .ai-result { display: none; background: var(--bg2); border-radius: var(--radius-sm); padding: 12px; font-size: 13px; line-height: 1.65; margin-top: 8px; border: 0.5px solid var(--border); }
+  .custom-row { display: none; }
+  #fileInput, #cameraInput { display: none; }
+  .apikey-wrap p { font-size: 13px; color: var(--text2); margin-bottom: 10px; line-height: 1.6; }
+  .apikey-row { display: flex; gap: 8px; }
+  .apikey-row input { flex: 1; border: 0.5px solid var(--border2); border-radius: var(--radius-sm); padding: 8px 10px; font-size: 13px; background: var(--bg); color: var(--text); font-family: inherit; }
+  .apikey-saved { font-size: 12px; color: #16a34a; margin-top: 6px; display: none; }
+  .ponudba-box { background: var(--bg); border-radius: var(--radius); border: 0.5px solid var(--border); padding: 16px; font-size: 13px; line-height: 1.7; white-space: pre-wrap; display: none; margin-bottom: 10px; }
+  .navodila p { font-size: 13px; color: var(--text2); line-height: 1.7; margin-bottom: 10px; }
+  .navodila strong { color: var(--text); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>⚙️ Ponudba struženje</h1>
+  <p>Kalkulacija za CNC struženje</p>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showPage('nacrt')"><i>📄</i>Načrt</div>
+  <div class="tab" onclick="showPage('kos')"><i>🔩</i>Kos</div>
+  <div class="tab" onclick="showPage('ops')"><i>📋</i>Operacije</div>
+  <div class="tab" onclick="showPage('result')"><i>💶</i>Ponudba</div>
+  <div class="tab" onclick="showPage('settings')"><i>⚙️</i>Nastavitve</div>
+</div>
+
+<!-- PAGE 1: NAČRT -->
+<div id="page-nacrt" class="page active">
+  <div class="card">
+    <div class="card-title">Naloži načrt</div>
+    <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+      <div class="icon">📁</div>
+      <p>Povleci PDF ali sliko sem<br>ali pritisni za izbiro datoteke</p>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="document.getElementById('fileInput').click()">📂 Naloži datoteko</button>
+      <button class="btn" onclick="document.getElementById('cameraInput').click()">📷 Fotografiraj</button>
+    </div>
+    <input type="file" id="fileInput" accept="image/*,.pdf" onchange="handleFile(this)">
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handleFile(this)">
+    <img id="previewImg" class="preview" alt="Predogled načrta">
+    <div class="status-line" id="fileStatus">Ni naložene datoteke</div>
+    <div class="info-box" id="infoBox">✅ Datoteka naložena. Pritisnite "Analiziraj z AI" za samodejno zaznavanje mer in predlog časov.</div>
+    <div class="btn-row" id="aiBtnRow" style="display:none">
+      <button class="btn primary" onclick="analyzeWithAI()">🤖 Analiziraj z AI</button>
+    </div>
+    <div class="thinking" id="thinking">
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      <span style="font-size:13px;color:var(--text2)">Analiziram načrt...</span>
+    </div>
+    <div class="ai-result" id="aiResult"></div>
+  </div>
+</div>
+
+<!-- PAGE 2: KOS -->
+<div id="page-kos" class="page">
+  <div class="card">
+    <div class="card-title">Surovec</div>
+    <div class="field"><label>Premer surovca</label><input type="number" id="surovecD" value="35" min="1" onchange="calcMaterial()"><span class="unit">mm</span></div>
+    <div class="field"><label>Dolžina surovca</label><input type="number" id="surovecL" value="45" min="1" onchange="calcMaterial()"><span class="unit">mm</span></div>
+    <div class="field"><label>Material</label>
+      <select id="material" onchange="calcMaterial()">
+        <option value="jeklo:7.85">Jeklo S235/S355</option>
+        <option value="inox:7.93">Inox 1.4301</option>
+        <option value="aluminij:2.70">Aluminij 6082</option>
+        <option value="medenina:8.50">Medenina</option>
+        <option value="titan:4.50">Titan</option>
+        <option value="drugo:7.85">Drugo</option>
+      </select>
+    </div>
+    <div class="field"><label>Cena materiala</label><input type="number" id="cenaMat" value="2.50" min="0" step="0.1" onchange="calcMaterial()"><span class="unit">€/kg</span></div>
+    <div class="mat-hint" id="matHint">—</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Parametri obdelave</div>
+    <div class="field"><label>Končni max. premer</label><input type="number" id="koncniD" value="33" min="1" onchange="calculate()"><span class="unit">mm</span></div>
+    <div class="field"><label>Končna dolžina</label><input type="number" id="koncniL" value="37" min="1" onchange="calculate()"><span class="unit">mm</span></div>
+    <div class="field"><label>Površinska obdelava</label>
+      <select id="povrsina" onchange="calculate()">
+        <option value="1.0">Ra 3.2 — grobo</option>
+        <option value="1.15" selected>Ra 1.6 — fino</option>
+        <option value="1.35">Ra 0.8 — brušeno</option>
+        <option value="1.55">Ra 0.4 — polirano</option>
+      </select>
+    </div>
+    <div class="field"><label>Tolerance</label>
+      <select id="tolerance" onchange="calculate()">
+        <option value="1.0">Splošne ISO 2768-m</option>
+        <option value="1.15">H7/g6 — ujem</option>
+        <option value="1.30">H6/f6 — natančni ujem</option>
+        <option value="1.50">Posebne (&lt;0.01 mm)</option>
+      </select>
+    </div>
+    <div class="field"><label>Količina</label><input type="number" id="kolicina" value="1" min="1" onchange="calculate()"><span class="unit">kos</span></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Stroj in stroški</div>
+    <div class="field"><label>Tip stroja</label>
+      <select id="stroj" onchange="toggleCustom()">
+        <option value="65">Mala stružnica — 65 €/h</option>
+        <option value="85" selected>Srednja stružnica — 85 €/h</option>
+        <option value="120">Velika stružnica — 120 €/h</option>
+        <option value="150">Multitasking — 150 €/h</option>
+        <option value="0">Po meri (vpišem sam)</option>
+      </select>
+    </div>
+    <div class="field custom-row" id="customRow"><label>Urna stopnja</label><input type="number" id="customUra" value="90" min="1" onchange="calculate()"><span class="unit">€/h</span></div>
+    <div class="field"><label>Priprava stroja</label><input type="number" id="priprava" value="30" min="0" onchange="calculate()"><span class="unit">min</span></div>
+    <div class="field"><label>Kooperacija</label><input type="number" id="koop" value="0" min="0" onchange="calculate()"><span class="unit">€</span></div>
+    <div class="field"><label>Marža</label><input type="number" id="marza" value="15" min="0" max="100" onchange="calculate()"><span class="unit">%</span></div>
+  </div>
+</div>
+
+<!-- PAGE 3: OPERACIJE -->
+<div id="page-ops" class="page">
+  <div class="card">
+    <div class="card-title">Časi operacij (min / kos)</div>
+    <div class="ops-list">
+      <div class="op-row"><span class="op-icon">🔧</span><span class="op-name">Vpenjanje / izpenjanje</span><input type="number" value="2" min="0" onchange="calculate()"><span class="op-unit">min</span></div>
+      <div class="op-row"><span class="op-icon">⚙️</span><span class="op-name">Grobo struženje</span><input type="number" value="6" min="0" onchange="calculate()"><span class="op-unit">min</span></div>
+      <div class="op-row"><span class="op-icon">🎯</span><span class="op-name">Fino struženje</span><input type="number" value="4" min="0" onchange="calculate()"><span class="op-unit">min</span></div>
+      <div class="op-row"><span class="op-icon">🔄</span><span class="op-name">Preklop / 2. vpetje</span><input type="number" value="0" min="0" onchange="calculate()"><span class="op-unit">min</span></div>
+      <div class="op-row"><span class="op-icon">🔩</span><span class="op-name">Navoji / vrtanje</span><input type="number" value="0" min="0" onchange="calculate()"><span class="op-unit">min</span></div>
+      <div class="op-row"><span class="op-icon">📏</span><span class="op-name">Merjenje / kontrola</span><input type="number" value="2" min="0" onchange="calculate()"><span class="op-unit">min</span></div>
+      <div class="op-row"><span class="op-icon">🧹</span><span class="op-name">Razgratenje / čiščenje</span><input type="number" value="1" min="0" onchange="calculate()"><span class="op-unit">min</span></div>
+    </div>
+    <div class="ops-total" id="opsTotal">Skupaj: — min/kos</div>
+  </div>
+</div>
+
+<!-- PAGE 4: PONUDBA -->
+<div id="page-result" class="page">
+  <div class="card">
+    <div class="card-title">Kalkulacija</div>
+    <div class="result-rows">
+      <div class="result-row"><span>Surovec</span><span id="rSurovec">—</span></div>
+      <div class="result-row"><span>Masa surovca</span><span id="rMasa">—</span></div>
+      <div class="result-row"><span>Cena materiala</span><span id="rMaterial">—</span></div>
+      <div class="result-row"><span>Priprava stroja</span><span id="rPriprava">—</span></div>
+      <div class="result-row"><span>Čas obdelave / kos</span><span id="rObdelava">—</span></div>
+      <div class="result-row"><span>Faktor kakovosti</span><span id="rFaktor">—</span></div>
+      <div class="result-row"><span>Skupni strojni čas</span><span id="rSkupajMin">—</span></div>
+      <div class="result-row"><span>Strojni strošek</span><span id="rStrojni">—</span></div>
+      <div class="result-row"><span>Kooperacija</span><span id="rKoop">—</span></div>
+      <div class="result-row"><span>Marža</span><span id="rMarza">—</span></div>
+    </div>
+    <div class="result-total">
+      <span class="label">Cena / kos</span>
+      <span class="value" id="rCenaKos">—</span>
+    </div>
+    <div class="result-sub">
+      <span id="rKolText">za 1 kos</span>
+      <span id="rSkupajCena" style="font-weight:600">—</span>
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" onclick="calculate()">🔄 Preračunaj</button>
+    <button class="btn primary" onclick="genPonudba()">📝 Generiraj ponudbo</button>
+  </div>
+  <div class="thinking" id="thinkingPon"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span style="font-size:13px;color:var(--text2)">Pripravljam ponudbo...</span></div>
+  <div class="ponudba-box" id="ponudbaBox"></div>
+  <div class="btn-row" id="ponudbaActions" style="display:none">
+    <button class="btn" onclick="copyPonudba()">📋 Kopiraj</button>
+    <button class="btn success" onclick="sharePonudba()">📤 Deli</button>
+  </div>
+</div>
+
+<!-- PAGE 5: NASTAVITVE -->
+<div id="page-settings" class="page">
+  <div class="card">
+    <div class="card-title">Anthropic API ključ</div>
+    <div class="apikey-wrap">
+      <p>Za AI analizo načrtov in generiranje ponudb potrebujete API ključ.<br>
+      Dobite ga <strong>brezplačno</strong> na <strong>console.anthropic.com</strong><br>
+      (nova registracija vključuje ~5 $ kreditov ≈ 100–150 analiz)</p>
+      <div class="apikey-row">
+        <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." onchange="saveApiKey()">
+        <button class="btn primary" onclick="saveApiKey()" style="flex:0;padding:8px 14px;margin-bottom:0">Shrani</button>
+      </div>
+      <div class="apikey-saved" id="apiKeySaved">✅ API ključ shranjen v napravi</div>
+    </div>
+  </div>
+  <div class="card navodila">
+    <div class="card-title">Navodila za postavitev na splet</div>
+    <p><strong>1. Registracija GitHub</strong><br>Pojdite na <strong>github.com</strong> → Sign up → brezplačni račun</p>
+    <p><strong>2. Nov repozitorij</strong><br>New repository → ime: <em>ponudba-struzenje</em> → Public → Create repository</p>
+    <p><strong>3. Naložite datoteko</strong><br>Add file → Upload files → naložite <strong>ponudba-struzenje.html</strong> → preimenujte v <strong>index.html</strong> → Commit changes</p>
+    <p><strong>4. Vklopite GitHub Pages</strong><br>Settings → Pages → Source: Deploy from branch → Branch: main → / (root) → Save</p>
+    <p><strong>5. Vaš naslov aplikacije</strong><br><em>https://VASEIME.github.io/ponudba-struzenje</em></p>
+    <p><strong>6. API ključ</strong><br>console.anthropic.com → API Keys → Create Key → prilepite ga v polje zgoraj</p>
+    <p><strong>7. Nadgradnje</strong><br>Ko bova dodelala aplikacijo, zamenjate samo datoteko index.html na GitHubu — posodobitev traja minuto.</p>
+  </div>
+  <div class="card">
+    <div class="card-title">O aplikaciji</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.7">
+      <strong style="color:var(--text)">Ponudba struženje v1.0</strong><br>
+      Razvito s Claude AI · Maj 2026<br>
+      Za nadgradnje in popravke: pošljite zahtevo Claudu na claude.ai
+    </div>
+  </div>
+</div>
+
+<script>
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  ['nacrt','kos','ops','result','settings'].forEach((n,i) => {
+    if (n === name) document.querySelectorAll('.tab')[i].classList.add('active');
+  });
+  if (name === 'result') calculate();
+}
+
+function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (key) {
+    localStorage.setItem('cnc_api_key', key);
+    document.getElementById('apiKeySaved').style.display = 'block';
+    setTimeout(() => document.getElementById('apiKeySaved').style.display = 'none', 2500);
+  }
+}
+
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('cnc_api_key');
+  if (saved) document.getElementById('apiKeyInput').value = saved;
+  calcMaterial(); calculate();
+});
+
+let imageBase64 = null, imageType = null;
+
+function handleFile(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const data = e.target.result;
+    imageBase64 = data.split(',')[1]; imageType = file.type;
+    const preview = document.getElementById('previewImg');
+    if (file.type.startsWith('image/')) { preview.src = data; preview.style.display = 'block'; }
+    else preview.style.display = 'none';
+    document.getElementById('fileStatus').textContent = '✅ ' + file.name + ' (' + (file.size/1024).toFixed(0) + ' KB)';
+    document.getElementById('infoBox').style.display = 'block';
+    document.getElementById('aiBtnRow').style.display = 'flex';
+    document.getElementById('aiResult').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function analyzeWithAI() {
+  const apiKey = localStorage.getItem('cnc_api_key');
+  if (!apiKey) { alert('Najprej vnesite Anthropic API ključ v zavihku ⚙️ Nastavitve.'); showPage('settings'); return; }
+  if (!imageBase64) { alert('Najprej naložite sliko ali PDF načrta.'); return; }
+  const thinking = document.getElementById('thinking');
+  const aiResult = document.getElementById('aiResult');
+  thinking.style.display = 'flex'; aiResult.style.display = 'none';
+  try {
+    const isImg = imageType && imageType.startsWith('image/');
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+        messages: [{ role: 'user', content: [
+          { type: isImg ? 'image' : 'document', source: { type: 'base64', media_type: isImg ? imageType : 'application/pdf', data: imageBase64 }},
+          { type: 'text', text: 'Si izkušen CNC strojar. Analiziraj ta tehnični načrt. Vrni SAMO JSON brez markdown:\n{"opis":"1 stavek opis","material":"predlagani material","surovecD":0,"surovecL":0,"koncniD":0,"koncniL":0,"kompleksnost":"preprosto/srednje/zahtevno","tolerance":"splosne/H7/H6/posebne","povrsina":"Ra3.2/Ra1.6/Ra0.8/Ra0.4","opombe":"posebne zahteve ali prazno","operacije":[{"ime":"naziv operacije","min":0}]}' }
+        ]}]
+      })
+    });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error.message);
+    const raw = data.content.map(i => i.text||'').join('').replace(/```json|```/g,'').trim();
+    const p = JSON.parse(raw);
+    if (p.surovecD > 0) document.getElementById('surovecD').value = p.surovecD;
+    if (p.surovecL > 0) document.getElementById('surovecL').value = p.surovecL;
+    if (p.koncniD > 0) document.getElementById('koncniD').value = p.koncniD;
+    if (p.koncniL > 0) document.getElementById('koncniL').value = p.koncniL;
+    const matMap = {'jeklo':'jeklo:7.85','inox':'inox:7.93','aluminij':'aluminij:2.70','medenina':'medenina:8.50','titan':'titan:4.50'};
+    const mk = Object.keys(matMap).find(k => (p.material||'').toLowerCase().includes(k));
+    if (mk) document.getElementById('material').value = matMap[mk];
+    if (p.tolerance==='H7') document.getElementById('tolerance').value='1.15';
+    else if (p.tolerance==='H6') document.getElementById('tolerance').value='1.30';
+    else if (p.tolerance==='posebne') document.getElementById('tolerance').value='1.50';
+    if (p.povrsina==='Ra0.8') document.getElementById('povrsina').value='1.35';
+    else if (p.povrsina==='Ra0.4') document.getElementById('povrsina').value='1.55';
+    else if (p.povrsina==='Ra3.2') document.getElementById('povrsina').value='1.0';
+    const inputs = document.querySelectorAll('.op-row input');
+    if (p.operacije) p.operacije.forEach((op,i) => { if (inputs[i]) inputs[i].value = op.min; });
+    calcMaterial(); calculate();
+    let html = '<strong>' + (p.opis||'') + '</strong><br>';
+    html += '📐 Surovec: Ø' + p.surovecD + ' × ' + p.surovecL + ' mm<br>';
+    html += '🔩 Material: ' + (p.material||'—') + '<br>';
+    html += '⚙️ Kompleksnost: ' + (p.kompleksnost||'—') + '<br>';
+    if (p.opombe) html += '📋 ' + p.opombe + '<br>';
+    html += '<br>✅ Polja so bila samodejno zapolnjena.';
+    aiResult.innerHTML = html; aiResult.style.display = 'block';
+  } catch(err) {
+    aiResult.innerHTML = '⚠️ Napaka pri analizi: ' + err.message;
+    aiResult.style.display = 'block';
+  } finally { thinking.style.display = 'none'; }
+}
+
+function calcMaterial() {
+  const d = parseFloat(document.getElementById('surovecD').value)||0;
+  const l = parseFloat(document.getElementById('surovecL').value)||0;
+  const gostota = parseFloat(document.getElementById('material').value.split(':')[1])||7.85;
+  const cenaKg = parseFloat(document.getElementById('cenaMat').value)||0;
+  const vol = Math.PI * Math.pow(d/2/10,2) * (l/10);
+  const masa = vol * gostota / 1000;
+  document.getElementById('matHint').textContent =
+    'Volumen: ' + vol.toFixed(2) + ' cm³  ·  Masa: ' + (masa*1000).toFixed(1) + ' g  ·  Cena surovca: ' + (masa*cenaKg).toFixed(3) + ' €';
+  calculate();
+}
+
+function getUrna() {
+  const s = document.getElementById('stroj').value;
+  return s==='0' ? (parseFloat(document.getElementById('customUra').value)||90) : parseFloat(s);
+}
+
+function toggleCustom() {
+  document.getElementById('customRow').style.display = document.getElementById('stroj').value==='0' ? 'flex' : 'none';
+  calculate();
+}
+
+function calculate() {
+  const d = parseFloat(document.getElementById('surovecD').value)||0;
+  const l = parseFloat(document.getElementById('surovecL').value)||0;
+  const gostota = parseFloat(document.getElementById('material').value.split(':')[1])||7.85;
+  const cenaKg = parseFloat(document.getElementById('cenaMat').value)||0;
+  const kolicina = parseInt(document.getElementById('kolicina').value)||1;
+  const pripravaMin = parseFloat(document.getElementById('priprava').value)||0;
+  const koop = parseFloat(document.getElementById('koop').value)||0;
+  const marza = parseFloat(document.getElementById('marza').value)||0;
+  const fp = parseFloat(document.getElementById('povrsina').value)||1;
+  const ft = parseFloat(document.getElementById('tolerance').value)||1;
+  const faktor = 1 + (fp-1) + (ft-1);
+  const urna = getUrna();
+  const vol = Math.PI * Math.pow(d/2/10,2) * (l/10);
+  const masa = vol * gostota / 1000;
+  const cenaMatKos = masa * cenaKg;
+  let opMin = 0;
+  document.querySelectorAll('.op-row input').forEach(i => opMin += parseFloat(i.value)||0);
+  const opAdj = opMin * faktor;
+  document.getElementById('opsTotal').textContent = 'Osnova: ' + opMin.toFixed(0) + ' min/kos  ·  S faktorjem: ' + opAdj.toFixed(1) + ' min/kos';
+  const skupajMin = pripravaMin + opAdj * kolicina;
+  const strojni = (skupajMin/60) * urna;
+  const matSkupaj = cenaMatKos * kolicina;
+  const osnova = strojni + matSkupaj + koop;
+  const marzaZn = osnova * marza / 100;
+  const skupaj = osnova + marzaZn;
+  const cenaKos = skupaj / kolicina;
+  document.getElementById('rSurovec').textContent = 'Ø' + d + ' × ' + l + ' mm';
+  document.getElementById('rMasa').textContent = (masa*1000).toFixed(1) + ' g';
+  document.getElementById('rMaterial').textContent = cenaMatKos.toFixed(3) + ' €/kos';
+  document.getElementById('rPriprava').textContent = pripravaMin.toFixed(0) + ' min';
+  document.getElementById('rObdelava').textContent = opAdj.toFixed(1) + ' min/kos';
+  document.getElementById('rFaktor').textContent = 'x' + faktor.toFixed(2) + ' (površina + tol.)';
+  document.getElementById('rSkupajMin').textContent = skupajMin.toFixed(0) + ' min @ ' + urna + ' €/h';
+  document.getElementById('rStrojni').textContent = strojni.toFixed(2) + ' €';
+  document.getElementById('rKoop').textContent = koop.toFixed(2) + ' €';
+  document.getElementById('rMarza').textContent = marza + '% → ' + marzaZn.toFixed(2) + ' €';
+  document.getElementById('rCenaKos').textContent = cenaKos.toFixed(2) + ' €';
+  document.getElementById('rSkupajCena').textContent = skupaj.toFixed(2) + ' €';
+  document.getElementById('rKolText').textContent = 'skupaj za ' + kolicina + ' kos';
+}
+
+async function genPonudba() {
+  const apiKey = localStorage.getItem('cnc_api_key');
+  if (!apiKey) { alert('Vnesite API ključ v ⚙️ Nastavitve.'); showPage('settings'); return; }
+  const thinking = document.getElementById('thinkingPon');
+  const box = document.getElementById('ponudbaBox');
+  const actions = document.getElementById('ponudbaActions');
+  thinking.style.display = 'flex'; box.style.display = 'none'; actions.style.display = 'none';
+  const sel = (id) => document.getElementById(id);
+  const opt = (id) => { const e=sel(id); return e.options[e.selectedIndex].text; };
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+        messages: [{ role: 'user', content:
+          'Napiši kratko profesionalno ponudbo v slovenščini za CNC struženje:\n' +
+          '- Surovec: ' + sel('rSurovec').textContent + '\n' +
+          '- Material: ' + opt('material') + '\n' +
+          '- Površinska obdelava: ' + opt('povrsina') + '\n' +
+          '- Tolerance: ' + opt('tolerance') + '\n' +
+          '- Stroj: ' + opt('stroj') + '\n' +
+          '- Čas obdelave: ' + sel('rObdelava').textContent + '\n' +
+          '- Količina: ' + sel('kolicina').value + ' kos\n' +
+          '- Cena/kos: ' + sel('rCenaKos').textContent + '\n' +
+          '- Skupaj: ' + sel('rSkupajCena').textContent + '\n\n' +
+          'Ponudba naj bo formalna, max 15 vrstic, brez HTML, brez markdown. Vključi današnji datum (' + new Date().toLocaleDateString('sl-SI') + '), veljavnost ponudbe 30 dni, in prostor za podpis.'
+        }]
+      })
+    });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error.message);
+    box.textContent = data.content.map(i=>i.text||'').join('');
+    box.style.display = 'block'; actions.style.display = 'flex';
+  } catch(err) {
+    box.textContent = '⚠️ Napaka: ' + err.message; box.style.display = 'block';
+  } finally { thinking.style.display = 'none'; }
+}
+
+function copyPonudba() {
+  navigator.clipboard.writeText(document.getElementById('ponudbaBox').textContent)
+    .then(() => alert('✅ Kopirano v odložišče!'));
+}
+
+function sharePonudba() {
+  const text = document.getElementById('ponudbaBox').textContent;
+  if (navigator.share) navigator.share({ title: 'Ponudba struženje', text });
+  else copyPonudba();
+}
+</script>
+</body>
+</html>
